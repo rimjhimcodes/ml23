@@ -1,9 +1,16 @@
+---
+title: "Homework 4"
+date: '2023-02-10'
+output:
+  pdf_document: default
+  html_document: default
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(fig.width = 6)
 knitr::opts_chunk$set(fig.align="center")
 ```
-
 
 ## Loading relevant libraries 
 
@@ -26,25 +33,33 @@ library(ggplot2)
 ```{r}
 housing.train = read.csv('housing_train.csv')
 housing.test = read.csv('housing_test.csv')
-housing.train$logSP = log(housing.train$SalePrice)
-housing.test$logSP = log(housing.test$SalePrice)
+```
+## Data cleaning
+```{r}
+str(housing.train)
+housing.train <- housing.train %>% mutate(logSP=log(Sale_Price))
 ```
 ## 2.1
 ### Histogram of $SalePrice$
 ```{r}
-housing.train %>% hist(SalePrice)
-housing.test %>% hist(SalePrice)
+hist(housing.train$Sale_Price)
 ```
 
 ### Histogram of $log(SalePrice)$
 ```{r}
-housing.train %>% hist(logSP)
-housing.test %>% hist(logSP)
+hist(housing.train$logSP)
 ```
 ### Scatterplot between $SalePrice$ and $Gr_Liv_Area$
+```{r}
+housing.train %>% ggplot(aes(Sale_Price, Gr_Liv_Area)) +
+  geom_point()
+``` 
 
 ### Scatterplot between $log(SalePrice)$ and $Gr_Liv_Area$
-
+```{r}
+housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
+  geom_point()
+``` 
 ## 2.2
 ```{r}
 #' @param y: a vector of responses
