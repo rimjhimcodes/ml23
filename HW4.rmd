@@ -9,6 +9,7 @@ knitr::opts_chunk$set(fig.align="center")
 
 ```{r message=F}
 library(dplyr)
+library(tidyverse)
 library(caret)
 library(glmnet)
 library(ROCR)
@@ -17,4 +18,49 @@ library(xgboost)
 library(ranger)
 library(rpart)
 library(rpart.plot)
+library(ggplot2)
 ```
+
+# Question 2
+## Reading the data
+```{r}
+housing.train = read.csv('housing_train.csv')
+housing.test = read.csv('housing_test.csv')
+housing.train$logSP = log(housing.train$SalePrice)
+housing.test$logSP = log(housing.test$SalePrice)
+```
+## 2.1
+### Histogram of $SalePrice$
+```{r}
+housing.train %>% hist(SalePrice)
+housing.test %>% hist(SalePrice)
+```
+
+### Histogram of $log(SalePrice)$
+```{r}
+housing.train %>% hist(logSP)
+housing.test %>% hist(logSP)
+```
+### Scatterplot between $SalePrice$ and $Gr_Liv_Area$
+
+### Scatterplot between $log(SalePrice)$ and $Gr_Liv_Area$
+
+## 2.2
+
+## 2.3
+
+## 2.4
+
+## 2.5
+
+```{r}
+lm.fit = lm(log(Sale_Price) ~ . , as.data.frame(housing.train))
+yhat = exp(predict(lm.fit, as.data.frame(housing.test)))
+#sampleSubmission is a dataframe with columns 'Id' and 'count'
+sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
+write.csv(sampleSubmission,
+          file = "sampleSubmission.csv",
+          row.names = FALSE,
+          quote = FALSE)
+```
+
