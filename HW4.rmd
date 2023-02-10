@@ -1,1 +1,20 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(fig.width = 6)
+knitr::opts_chunk$set(fig.align="center")
+```
 
+
+## Loading relevant libraries 
+
+```{r message=F}
+library(dplyr)
+library(caret)
+library(glmnet)
+library(ROCR)
+library(dbarts)
+library(xgboost)
+library(ranger)
+library(rpart)
+library(rpart.plot)
+```
