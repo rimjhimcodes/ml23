@@ -64,7 +64,7 @@ housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
 ```{r}
 #' @param y: a vector of responses
 #' @param X: covariate matrix
-#' @return plots of BIC as a function of model size
+#' @return plots of RSS and BIC as a function of model size
 run_forward_selection_BIC = function(y, X){
   S = store_RSS = c()
   p = dim(X)[2]
@@ -154,9 +154,5 @@ write.csv(sampleSubmission,
           file = "sampleSubmission.csv",
           row.names = FALSE,
           quote = FALSE)
-```
-
-```{r}
-#hh
 ```
 
