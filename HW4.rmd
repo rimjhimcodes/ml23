@@ -63,13 +63,14 @@ housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
 ## 2.2
 
 ```{r}
+housing.train <- housing.train[,-1]
 fwd.step.bic = bestglm(housing.train, 
                        family = gaussian, 
                        IC     = "BIC",
                        method = "forward")
 fwd.step.bic
 ```
-
+31
 
 ```{r}
 fwd.step.bic$Subsets
@@ -94,7 +95,7 @@ fwd.step.cv = bestglm(housing.train,
                       method = "forward")
 fwd.step.cv
 ```
-
+12
 ```{r}
 fwd.step.cv$Subsets
 ```
@@ -125,7 +126,7 @@ abline(h=cutOff, lty=2)
 indMin = which.min(cverrs)
 abline(v=indMin-1, lty=2)
 
-points(0:100, dev.plot, lwd=2, col='black')
+points(0:99, dev.plot, lwd=2, col='black')
 legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
 ```
 
@@ -133,7 +134,7 @@ legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
 **Lasso**: $\hat{\beta} = \text{argmin}_{\beta} \Big\{ \text{deviance} +\lambda \|\beta\|_1\Big\}$
 ```{r}
 x = as.matrix( housing.train[,1:99] )
-y = housing.train[,101]
+y = housing.train[,100]
 lasso.fit = glmnet(x, y)
 plot( lasso.fit, xvar = "lambda" )
 plot( lasso.fit, xvar = "norm" )
@@ -175,7 +176,8 @@ coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ## 2.5
 
 ```{r}
-pred <- predict(lasso.cv, housing.test, s=lasso.cv$lambda.min)
+h.test <- model.matrix(~.-y,data=housing.test)
+pred <- predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min)
 yhat = exp(pred)
 #sampleSubmission is a dataframe with columns 'Id' and 'count'
 sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
