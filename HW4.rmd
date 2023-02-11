@@ -85,12 +85,7 @@ fwd.step.bic = bestglm(housing.train,
                        family = gaussian, 
                        IC     = "BIC",
                        method = "forward")
-fwd.step.bic
 ```
-31
-
-
-# Observations:
 
 31 variables got selected using the BIC. 
 ```{r}
@@ -113,11 +108,7 @@ fwd.step.cv = bestglm(housing.train,
                       IC     = "CV",
                       CVArgs = list(Method="HTF", K=10, REP=1),
                       method = "forward")
-fwd.step.cv
 ```
-12
-
-# Observations
 
 Using the CV method, 12 variables got selected.
 ```{r}
@@ -154,10 +145,8 @@ abline(v=indMin-1, lty=2)
 points(0:99, dev.plot, lwd=2, col='black')
 legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
 ```
-# Observations:
 
-Uisng the 1-sd rule we see that 12 variables got selected.
-
+Using the 1-sd rule we see that 12 variables got selected.
 
 ## 2.3
 **Lasso**: $\hat{\beta} = \text{argmin}_{\beta} \Big\{ \text{deviance} +\lambda \|\beta\|_1\Big\}$
@@ -176,10 +165,8 @@ data.frame(lasso = as.matrix(coef(lasso.fit, s = c(5, 1, 0.5))),
 ```
 
 We observe that the lasso  
-  
 - Can shrink coefficients exactly to zero  
 - Simultaneously estimates and selects coefficients  
-
 We need to choose lambda.  
 
 ```{r}
@@ -201,6 +188,13 @@ Let us investigate coefficients for these values of lambda:
 ```{r}
 coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ```
+
+### Plot showing cross validation score as a function of λ
+```{r}
+plot( lasso.cv, xvar = "lambda" )
+plot( lasso.fit, xvar = "norm" )
+```
+
 ## 2.4
 
 
@@ -208,18 +202,8 @@ coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ## 2.5
 
 ```{r}
-str(housing.train)
-```
-```{r}
-str(housing.test)
-```
-
-
-```{r}
 h.test <- model.matrix(~.-1,data= housing.test)
-pred <- predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min)
-yhat = exp(pred)
-#sampleSubmission is a dataframe with columns 'Id' and 'count'
+yhat = exp(predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min))
 sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
 write.csv(sampleSubmission,
           file = "sampleSubmission.csv",
