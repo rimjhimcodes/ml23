@@ -49,13 +49,13 @@ hist(housing.train$Sale_Price)
 ```{r}
 hist(housing.train$logSP)
 ```
-### Scatterplot between $SalePrice$ and $Gr_Liv_Area$
+### Scatterplot between $SalePrice$ and $GrLivArea$
 ```{r}
 housing.train %>% ggplot(aes(Sale_Price, Gr_Liv_Area)) +
   geom_point()
 ``` 
 
-### Scatterplot between $log(SalePrice)$ and $Gr_Liv_Area$
+### Scatterplot between $log(SalePrice)$ and $GrLivArea$
 ```{r}
 housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
   geom_point()
@@ -185,9 +185,5 @@ write.csv(sampleSubmission,
           file = "sampleSubmission.csv",
           row.names = FALSE,
           quote = FALSE)
-```
-
-```{r}
-#hh
 ```
 
