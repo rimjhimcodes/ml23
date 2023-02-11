@@ -78,10 +78,10 @@ fwd.step.bic$Subsets
 ```{r}
 dev.plot = -2 * fwd.step.bic$Subsets$logLikelihood
 bic.plot = fwd.step.bic$Subsets$BIC
-plot(0:100, dev.plot, lwd=2, col='black', type='p',
+plot(0:99, dev.plot, lwd=2, col='black', type='p',
      ylim = c(min(dev.plot), max(bic.plot)),
      xlab='Subset Size', ylab='Deviance', main='All subsets')
-points(0:100, bic.plot, lwd=2, col='red')
+points(0:99, bic.plot, lwd=2, col='red')
 legend("topright", legend=c("deviance", "BIC"), col=c("black", "red"), pch=1)
 ```
 
@@ -132,28 +132,25 @@ legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
 ## 2.3
 **Lasso**: $\hat{\beta} = \text{argmin}_{\beta} \Big\{ \text{deviance} +\lambda \|\beta\|_1\Big\}$
 ```{r}
-x = as.matrix( housing.train[,1:100] )
-y = df[,11]
+x = as.matrix( housing.train[,1:99] )
+y = housing.train[,101]
 lasso.fit = glmnet(x, y)
 plot( lasso.fit, xvar = "lambda" )
 plot( lasso.fit, xvar = "norm" )
 ```
 
 
-Clearly the regression coefficients are smaller for the lasso regression than for least squares.
-
 ```{r}
 data.frame(lasso = as.matrix(coef(lasso.fit, s = c(5, 1, 0.5))),
            LS    = coef(lm(y ~ x)))
 ```
 
-We observe that the lasso
+We observe that the lasso  
+  
+- Can shrink coefficients exactly to zero  
+- Simultaneously estimates and selects coefficients  
 
-- Can shrink coefficients exactly to zero
-- Simultaneously estimates and selects coefficients
-
-
-We need to choose lambda.
+We need to choose lambda.  
 
 ```{r}
 lasso.cv = cv.glmnet(x, y)
@@ -178,8 +175,8 @@ coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ## 2.5
 
 ```{r}
-lm.fit = lm(log(Sale_Price) ~ . , as.data.frame(housing.train))
-yhat = exp(predict(lm.fit, as.data.frame(housing.test)))
+pred <- predict(lasso.cv, housing.test, s=lasso.cv$lambda.min)
+yhat = exp(pred)
 #sampleSubmission is a dataframe with columns 'Id' and 'count'
 sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
 write.csv(sampleSubmission,
