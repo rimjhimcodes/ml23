@@ -21,7 +21,7 @@ library(caret)
 library(glmnet)
 library(ROCR)
 library(dbarts)
-library(xgboost)
+library(bestglm)
 library(ranger)
 library(rpart)
 library(rpart.plot)
@@ -61,85 +61,117 @@ housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
   geom_point()
 ``` 
 ## 2.2
+
 ```{r}
-#' @param y: a vector of responses
-#' @param X: covariate matrix
-#' @return plots of BIC as a function of model size
-run_forward_selection_BIC = function(y, X){
-  S = store_RSS = c()
-  p = dim(X)[2]
-  
-  for(i in 1:p){
-  		RSS = rep(0,p)
-  		for(j in 1:p){
-  		  S0 = append(S,j)
-  		  RSS[j] = sum((y-lm(y~X[,S0])$fitted.values)^2)
-  		}
-  		store_RSS[i+1] = min(RSS)
-  		ind = which.min(RSS)
-  		S = append(S,ind)
-  }
-  
-  	BIC = n*log(store_RSS) + (0:p)*log(n)
-  	modelsize = which.min(BIC)-1
-  	
-		par(mfrow=c(1,2))
-		plot(0:p, store_RSS, xlab='Model Size', ylab='RSS')
-  	plot(0:p, BIC, xlab='Model Size', ylab='BIC')
-}
+fwd.step.bic = bestglm(housing.train, 
+                       family = gaussian, 
+                       IC     = "BIC",
+                       method = "forward")
+fwd.step.bic
+```
+
+
+```{r}
+fwd.step.bic$Subsets
 ```
 
 ```{r}
-run_forward_selection_BIC(y, X)
+dev.plot = -2 * fwd.step.bic$Subsets$logLikelihood
+bic.plot = fwd.step.bic$Subsets$BIC
+plot(0:100, dev.plot, lwd=2, col='black', type='p',
+     ylim = c(min(dev.plot), max(bic.plot)),
+     xlab='Subset Size', ylab='Deviance', main='All subsets')
+points(0:100, bic.plot, lwd=2, col='red')
+legend("topright", legend=c("deviance", "BIC"), col=c("black", "red"), pch=1)
 ```
 
-### Best Subset
 
-Compares all models for each possible combination of the $p$ predictors. Since there are $2^p$ models to compare, it cannot be applied when $p$ is large.
-
-```{r, message=F}
-library(bestglm)
-
-data = cbind(X,y)
-bestglm(as.data.frame(data), family = gaussian, IC = "BIC", method = "exhaustive")
+```{r}
+fwd.step.cv = bestglm(housing.train, 
+                      family = gaussian, 
+                      IC     = "CV",
+                      CVArgs = list(Method="HTF", K=10, REP=1),
+                      method = "forward")
+fwd.step.cv
 ```
+
+```{r}
+fwd.step.cv$Subsets
+```
+
+```{r}
+dev.plot = -2 * fwd.step.cv$Subsets$logLikelihood
+cverrs = fwd.step.cv$Subsets$CV
+sdCV = fwd.step.cv$Subsets$sdCV
+CVLo = cverrs - sdCV
+CVHi = cverrs + sdCV
+k = 0:(length(cverrs)-1)
+plot(k, cverrs, xlab="Subset Size", ylab="CV Error", main='All subsets',
+     ylim=c(min(CVLo),max(CVHi)), type="n")
+points(k, cverrs, cex=2, col="red", pch=16)
+lines(k, cverrs, col="red", lwd=2)
+# plot error bars
+segments(k, CVLo, k, CVHi, col="blue", lwd=2)
+eps = 0.15
+segments(k-eps, CVLo, k+eps, CVLo, col="blue", lwd=2)
+segments(k-eps, CVHi, k+eps, CVHi, col="blue", lwd=2)
+
+indBest = oneSDRule(fwd.step.cv$Subsets[,c("CV", "sdCV")])
+abline(v=indBest-1, lty=2)
+indMin = which.min(cverrs)
+fmin = sdCV[indMin]
+cutOff = fmin + cverrs[indMin]
+abline(h=cutOff, lty=2)
+indMin = which.min(cverrs)
+abline(v=indMin-1, lty=2)
+
+points(0:100, dev.plot, lwd=2, col='black')
+legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
+```
+
 ## 2.3
 **Lasso**: $\hat{\beta} = \text{argmin}_{\beta} \Big\{ \text{deviance} +\lambda \|\beta\|_1\Big\}$
 ```{r}
-ames = as.matrix(read.table('ames_data.txt', header=TRUE))
-
-y_name = 'LotArea'
-
-ind = which(ames[,colnames(ames)=='YearBuilt']>=2000) # only those built after 2000
-
-X = ames[ind, colnames(ames)!=y_name]
-y = ames[ind, colnames(ames)==y_name]
-
-n = length(y); p = dim(X)[2]
-
-colnames(X)
+x = as.matrix( housing.train[,1:100] )
+y = df[,11]
+lasso.fit = glmnet(x, y)
+plot( lasso.fit, xvar = "lambda" )
+plot( lasso.fit, xvar = "norm" )
 ```
 
-Lasso regression:
-```{r fig.height=6}
-plot(glmnet(X, y, alpha=1), xvar = "lambda") # alpha = 1 is lasso penalty
-```
 
-### Cross-Validation
-```{r fig.height=4}
-# default is 10-fold cv
-cv_lasso = cv.glmnet(X, y, alpha=1) # lasso
-
-par(mfrow=c(1,2))
-plot(cv_lasso)
-```
+Clearly the regression coefficients are smaller for the lasso regression than for least squares.
 
 ```{r}
-coef(cv_lasso)
+data.frame(lasso = as.matrix(coef(lasso.fit, s = c(5, 1, 0.5))),
+           LS    = coef(lm(y ~ x)))
 ```
 
+We observe that the lasso
+
+- Can shrink coefficients exactly to zero
+- Simultaneously estimates and selects coefficients
+
+
+We need to choose lambda.
+
 ```{r}
-predict(cv_lasso, housing.test)
+lasso.cv = cv.glmnet(x, y)
+plot(lasso.cv, sign.lambda=-1)
+```
+
+
+```{r}
+glmnet.fit <- lasso.cv$glmnet.fit
+plot(glmnet.fit, xvar = "lambda")
+abline(v = log(lasso.cv$lambda.min), lty=2, col="red")
+abline(v = log(lasso.cv$lambda.1se), lty=2, col="green")
+legend("topright", legend=c("min", "1se"), lty=2, col=c("red", "green"))
+```
+
+Let us investigate coefficients for these values of lambda:
+```{r}
+coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ```
 ## 2.4
 
