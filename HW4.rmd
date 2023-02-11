@@ -176,14 +176,17 @@ coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ## 2.5
 
 ```{r}
-h.test <- model.matrix(~.-y,data=housing.test)
-pred <- predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min)
-yhat = exp(pred)
-#sampleSubmission is a dataframe with columns 'Id' and 'count'
+h.test <- model.matrix(~.-1,data=housing.test)
+yhat = exp(predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min))
 sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
 write.csv(sampleSubmission,
           file = "sampleSubmission.csv",
+          col.names = c("Id", "Sale_Price"),
           row.names = FALSE,
           quote = FALSE)
+```
+
+```{r}
+
 ```
 
