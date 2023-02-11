@@ -44,22 +44,39 @@ housing.train <- housing.train %>% mutate(logSP=log(Sale_Price))
 ```{r}
 hist(housing.train$Sale_Price)
 ```
+# Observations
 
+The histogram shows that the data is skewed when we use Sale_Price
 ### Histogram of $log(SalePrice)$
 ```{r}
 hist(housing.train$logSP)
 ```
+# Observations
+
+Using the log(Sale_Price), the skewness has reduced drastically while taking a 
+near normal distribution. It is,therefore, preferred to use log version.
+
 ### Scatterplot between $SalePrice$ and $GrLivArea$
 ```{r}
-housing.train %>% ggplot(aes(Sale_Price, Gr_Liv_Area)) +
+housing.train %>% ggplot(aes(Gr_Liv_Area,Sale_Price)) +
   geom_point()
 ``` 
+# Observations
 
+We can see that the sales price has a linear relationship with Living area. It
+increases as living area increases. Though the residuals increases around the 
+best fit line with  larger areas. 
 ### Scatterplot between $log(SalePrice)$ and $GrLivArea$
 ```{r}
-housing.train %>% ggplot(aes(logSP, Gr_Liv_Area)) +
+housing.train %>% ggplot(aes(Gr_Liv_Area, logSP)) +
   geom_point()
 ``` 
+#Observations
+
+In the log version, the dispersion is less around the best fit line. It is 
+linear as well. The log or price increases with increasing living area.
+
+
 ## 2.2
 
 ```{r}
@@ -72,6 +89,10 @@ fwd.step.bic
 ```
 31
 
+
+# Observations:
+
+31 variables got selected using the BIC. 
 ```{r}
 fwd.step.bic$Subsets
 ```
@@ -86,7 +107,6 @@ points(0:99, bic.plot, lwd=2, col='red')
 legend("topright", legend=c("deviance", "BIC"), col=c("black", "red"), pch=1)
 ```
 
-
 ```{r}
 fwd.step.cv = bestglm(housing.train, 
                       family = gaussian, 
@@ -96,6 +116,10 @@ fwd.step.cv = bestglm(housing.train,
 fwd.step.cv
 ```
 12
+
+# Observations
+
+Using the CV method, 12 variables got selected.
 ```{r}
 fwd.step.cv$Subsets
 ```
@@ -118,6 +142,7 @@ segments(k-eps, CVLo, k+eps, CVLo, col="blue", lwd=2)
 segments(k-eps, CVHi, k+eps, CVHi, col="blue", lwd=2)
 
 indBest = oneSDRule(fwd.step.cv$Subsets[,c("CV", "sdCV")])
+print(indBest)
 abline(v=indBest-1, lty=2)
 indMin = which.min(cverrs)
 fmin = sdCV[indMin]
@@ -129,6 +154,10 @@ abline(v=indMin-1, lty=2)
 points(0:99, dev.plot, lwd=2, col='black')
 legend("topright", legend=c("deviance", "CV"), col=c("black", "red"), pch=1)
 ```
+# Observations:
+
+Uisng the 1-sd rule we see that 12 variables got selected.
+
 
 ## 2.3
 **Lasso**: $\hat{\beta} = \text{argmin}_{\beta} \Big\{ \text{deviance} +\lambda \|\beta\|_1\Big\}$
@@ -155,6 +184,7 @@ We need to choose lambda.
 
 ```{r}
 lasso.cv = cv.glmnet(x, y)
+print(lasso.cv)
 plot(lasso.cv, sign.lambda=-1)
 ```
 
@@ -173,20 +203,27 @@ coef(lasso.cv, s = c(lasso.cv$lambda.min, lasso.cv$lambda.1se))
 ```
 ## 2.4
 
+
+
 ## 2.5
 
 ```{r}
-h.test <- model.matrix(~.-1,data=housing.test)
-yhat = exp(predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min))
+str(housing.train)
+```
+```{r}
+str(housing.test)
+```
+
+
+```{r}
+h.test <- model.matrix(~.-1,data= housing.test)
+pred <- predict(lasso.cv$glmnet.fit, h.test, s=lasso.cv$lambda.min)
+yhat = exp(pred)
+#sampleSubmission is a dataframe with columns 'Id' and 'count'
 sampleSubmission = data.frame(Id=1:length(yhat), Sale_Price=yhat)
 write.csv(sampleSubmission,
           file = "sampleSubmission.csv",
-          col.names = c("Id", "Sale_Price"),
           row.names = FALSE,
           quote = FALSE)
-```
-
-```{r}
-
 ```
 
